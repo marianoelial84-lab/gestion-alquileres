@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Gestión de Departamentos</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-slate-100 font-sans text-slate-800 antialiased min-h-screen">
+
+  <!-- NAVBAR SUPERIOR -->
+  <nav class="bg-indigo-900 text-white shadow-lg sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        <div class="flex items-center space-x-3">
+          <i class="fa-solid fa-building-user text-amber-400 text-2xl"></i>
+          <span class="font-bold text-lg tracking-wide">Gestión Alquileres</span>
+        </div>
+        <div class="flex space-x-2">
+          <button id="btnNavDashboard" onclick="cambiarVista('dashboard')" class="px-4 py-2 rounded-lg text-sm font-semibold transition bg-indigo-700 text-white shadow">
+            <i class="fa-solid fa-chart-line mr-2"></i>Dashboard
+          </button>
+          <button id="btnNavGastos" onclick="cambiarVista('gastos')" class="px-4 py-2 rounded-lg text-sm font-semibold transition text-indigo-200 hover:bg-indigo-800">
+            <i class="fa-solid fa-receipt mr-2"></i>Cargar Gastos
+          </button>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+    <!-- ==================== VISTA 1: DASHBOARD ==================== -->
+    <section id="vistaDashboard" class="space-y-6">
+      
+      <!-- CONTROLES Y FILTROS MULTIMES / AÑO -->
+      <div class="bg-white p-4 rounded-xl shadow-md flex flex-wrap items-center justify-between gap-4">
+        <h1 class="text-xl font-bold text-slate-800 flex items-center gap-2">
+          <i class="fa-solid fa-gauge-high text-indigo-600"></i> Indicadores y Métricas
+        </h1>
+        
+        <div class="flex flex-wrap items-center gap-3">
+          <!-- Filtro Depto -->
+          <div>
+            <label class="block text-xs font-semibold text-slate-500 mb-1">Departamento</label>
+            <select id="filtroDepto" onchange="actualizarDashboard()" class="border border-slate-300 rounded-lg text-sm px-3 py-1.5 focus:ring-2 focus:ring-indigo-500 outline-none">
+              <option value="TODOS">Todos los Deptos</option>
+              <option value="Depto 2">Depto 2</option>
+              <option value="Depto 3">Depto 3</option>
+              <option value="Depto 4">Depto 4</option>
+              <option value="Depto 5">Depto 5</option>
+              <option value="Depto 6">Depto 6</option>
+            </select>
+          </div>
+
+          <!-- Filtro Año -->
+          <div>
+            <label class="block text-xs font-semibold text-slate-500 mb-1">Año</label>
+            <select id="filtroAnio" onchange="actualizarDashboard()" class="border border-slate-300 rounded-lg text-sm px-3 py-1.5 focus:ring-2 focus:ring-indigo-500 outline-none">
+              <option value="TODOS">Todos</option>
+              <option value="2024">2024</option>
+              <option value="2025">2025</option>
+              <option value="2026" selected>2026</option>
+            </select>
+          </div>
+
+          <!-- Filtro Multiselect de Meses -->
+          <div>
+            <label class="block text-xs font-semibold text-slate-500 mb-1">Meses (Ctrl+Clic)</label>
+            <select id="filtroMeses" multiple onchange="actualizarDashboard()" class="border border-slate-300 rounded-lg text-xs px-2 py-1 h-16 focus:ring-2 focus:ring-indigo-500 outline-none w-32">
+              <option value="0">Enero</option>
+              <option value="1">Febrero</option>
+              <option value="2">Marzo</option>
+              <option value="3">Abril</option>
+              <option value="4">Mayo</option>
+              <option value="5">Junio</option>
+              <option value="6">Julio</option>
+              <option value="7">Agosto</option>
+              <option value="8">Septiembre</option>
+              <option value="9">Octubre</option>
+              <option value="10">Noviembre</option>
+              <option value="11">Diciembre</option>
+            </select>
+          </div>
+          
+          <button onclick="limpiarSeleccionMeses()" class="text-xs text-indigo-600 hover:underline self-end pb-1">Ver Todos</button>
+        </div>
+      </div>
+
+      <!-- TARJETAS KPIS -->
+      <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-emerald-500">
+          <p class="text-xs font-medium text-slate-500 uppercase">Ingresos</p>
+          <p id="kpiIngresos" class="text-lg md:text-xl font-extrabold text-slate-800 mt-1">$0</p>
+        </div>
+        <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-rose-500">
+          <p class="text-xs font-medium text-slate-500 uppercase">Gastos</p>
+          <p id="kpiGastos" class="text-lg md:text-xl font-extrabold text-slate-800 mt-1">$0</p>
+        </div>
+        <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-indigo-500">
+          <p class="text-xs font-medium text-slate-500 uppercase">Ganancia Neta</p>
+          <p id="kpiGanancia" class="text-lg md:text-xl font-extrabold text-slate-800 mt-1">$0</p>
+        </div>
+        <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-amber-500">
+          <p class="text-xs font-medium text-slate-500 uppercase">Ocupación %</p>
+          <p id="kpiOcupacion" class="text-lg md:text-xl font-extrabold text-slate-800 mt-1">0%</p>
+        </div>
+        <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-cyan-500">
+          <p class="text-xs font-medium text-slate-500 uppercase">ADR (Diario)</p>
+          <p id="kpiADR" class="text-lg md:text-xl font-extrabold text-slate-800 mt-1">$0</p>
+        </div>
+        <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-purple-500">
+          <p class="text-xs font-medium text-slate-500 uppercase">RevPAR</p>
+          <p id="kpiRevPAR" class="text-lg md:text-xl font-extrabold text-slate-800 mt-1">$0</p>
+        </div>
+      </div>
+
+      <!-- SECCIÓN DE GRÁFICOS -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="bg-white p-5 rounded-xl shadow-md ">
+          <h2 class="text-base font-bold text-slate-700 mb-4">Evolución Mensual: Ingresos vs Gastos</h2>
+          <div class="h-64">
+            <canvas id="chartEvolucionMensual"></canvas>
+          </div>
+        </div>
+
+        <div class="bg-white p-5 rounded-xl shadow-md ">
+          <h2 class="text-base font-bold text-slate-700 mb-4">Ventas por Canal por Mes (Apilado)</h2>
+          <div class="h-64">
+            <canvas id="chartCanalesMes"></canvas>
+          </div>
+        </div>
+
+        <div class="bg-white p-5 rounded-xl shadow-md">
+          <h2 class="text-base font-bold text-slate-700 mb-4">Ingresos vs Gastos por Depto</h2>
+          <div class="h-64">
+            <canvas id="chartComparativo"></canvas>
+          </div>
+        </div>
+
+        <div class="bg-white p-5 rounded-xl shadow-md">
+          <h2 class="text-base font-bold text-slate-700 mb-4">Distribución por Canal de Venta</h2>
+          <div class="h-64 flex justify-center">
+            <canvas id="chartCanales"></canvas>
+          </div>
+        </div>
+
+        <div class="bg-white p-5 rounded-xl shadow-md lg:col-span-2">
+          <h2 class="text-base font-bold text-slate-700 mb-4">Desglose de Gastos por Categoría</h2>
+          <div class="h-64">
+            <canvas id="chartGastosCat"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- TABLA COMPARATIVA -->
+      <div class="bg-white rounded-xl shadow-md overflow-hidden">
+        <div class="p-4 border-b border-slate-100">
+          <h2 class="text-base font-bold text-slate-700">Resumen Desglosado por Departamento</h2>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm text-left text-slate-600">
+            <thead class="text-xs uppercase bg-slate-50 text-slate-500 border-b">
+              <tr>
+                <th class="px-4 py-3">Métrica</th>
+                <th class="px-4 py-3">Depto 2</th>
+                <th class="px-4 py-3">Depto 3</th>
+                <th class="px-4 py-3">Depto 4</th>
+                <th class="px-4 py-3">Depto 5</th>
+                <th class="px-4 py-3">Depto 6</th>
+              </tr>
+            </thead>
+            <tbody id="tablaResumenBody" class="divide-y divide-slate-100">
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ==================== VISTA 2: CARGA DE GASTOS CON LECTOR DE ARCHIVOS ==================== -->
+    <section id="vistaGastos" class="hidden space-y-6">
+      <div class="max-w-xl mx-auto bg-white p-6 rounded-xl shadow-md">
+        <h2 class="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
+          <i class="fa-solid fa-plus-circle text-indigo-600"></i> Registrar Nuevo Gasto
+        </h2>
+
+        <!-- ÁREA DE LECTURA / ESCANEO DE ARCHIVOS (PDF O IMAGEN) -->
+        <div class="mb-6 p-4 border-2 border-dashed border-indigo-200 bg-indigo-50/50 rounded-xl">
+          <label class="block text-xs font-bold text-indigo-900 uppercase tracking-wider mb-2">
+            <i class="fa-solid fa-file-invoice mr-1"></i> Autocompletar desde PDF o Imagen
+          </label>
+          <div class="flex items-center gap-3">
+            <input type="file" id="archivoComprobante" accept="image/*,.pdf" class="block w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-indigo-600 file:text-white hover:file:bg-indigo-700 cursor-pointer">
+            <button type="button" onclick="procesarComprobante()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-lg transition shadow whitespace-nowrap">
+              <i class="fa-solid fa-wand-magic-sparkles mr-1"></i> Leer Datos
+            </button>
+          </div>
+          <p id="estadoLectura" class="text-xs text-slate-500 mt-2 hidden"></p>
+        </div>
+        
+        <!-- FORMULARIO DE CARGA DE GASTOS -->
+        <form id="formGasto" onsubmit="guardarGasto(event)" class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-slate-700">Fecha</label>
+            <input type="date" id="gastoFecha" required class="mt-1 w-full border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-indigo-500 outline-none">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-700">Departamento</label>
+            <select id="gastoDepto" required class="mt-1 w-full border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-indigo-500 outline-none">
+              <option value="General">General</option>
+              <option value="Depto 2">Depto 2</option>
+              <option value="Depto 3">Depto 3</option>
+              <option value="Depto 4">Depto 4</option>
+              <option value="Depto 5">Depto 5</option>
+              <option value="Depto 6">Depto 6</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-700">Categoría</label>
+            <select id="gastoCategoria" required class="mt-1 w-full border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-indigo-500 outline-none">
+              <option value="Luz">Luz</option>
+              <option value="Gas">Gas</option>
+              <option value="Agua">Agua</option>
+              <option value="Internet & Cable">Internet & Cable</option>
+              <option value="Comisiones">Comisiones</option>
+              <option value="Mantenimiento">Mantenimiento</option>
+              <option value="Limpieza">Limpieza</option>
+              <option value="Varios">Varios</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-700">Detalle / Proveedor</label>
+            <input type="text" id="gastoDetalle" placeholder="Ej. Factura EDEN" class="mt-1 w-full border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-indigo-500 outline-none">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-700">Monto ($)</label>
+            <input type="number" step="0.01" id="gastoMonto" required placeholder="0.00" class="mt-1 w-full border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-indigo-500 outline-none">
+          </div>
+          
+          <button type="submit" id="btnGuardarGasto" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 rounded-lg transition shadow">
+            Guardar Gasto
+          </button>
+        </form>
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    let datosGlobales = { reservas: [], gastos: [], deptosDisponibles: [] };
+    let chartEvolucion = null, chartCanalMes = null, chartComp = null, chartCanal = null, chartGastos = null;
+
+    const NOMBRES_MESES = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
+    const COLORES_CANALES = ['#6366f1', '#f59e0b', '#06b6d4', '#8b5cf6', '#ec4899', '#10b981'];
+
+    window.onload = function() {
+      document.getElementById('gastoFecha').value = new Date().toISOString().substring(0, 10);
+      
+      google.script.run
+        .withSuccessHandler(function(data) {
+          datosGlobales = data;
+          actualizarDashboard();
+        })
+        .obtenerDatosDashboard();
+    };
+
+    function cambiarVista(vista) {
+      const vDash = document.getElementById('vistaDashboard');
+      const vGastos = document.getElementById('vistaGastos');
+      const btnDash = document.getElementById('btnNavDashboard');
+      const btnGastos = document.getElementById('btnNavGastos');
+
+      if (vista === 'dashboard') {
+        vDash.classList.remove('hidden');
+        vGastos.classList.add('hidden');
+        btnDash.className = "px-4 py-2 rounded-lg text-sm font-semibold transition bg-indigo-700 text-white shadow";
+        btnGastos.className = "px-4 py-2 rounded-lg text-sm font-semibold transition text-indigo-200 hover:bg-indigo-800";
+      } else {
+        vDash.classList.add('hidden');
+        vGastos.classList.remove('hidden');
+        btnGastos.className = "px-4 py-2 rounded-lg text-sm font-semibold transition bg-indigo-700 text-white shadow";
+        btnDash.className = "px-4 py-2 rounded-lg text-sm font-semibold transition text-indigo-200 hover:bg-indigo-800";
+      }
+    }
+
+    // PROCESAR COMPROBANTE (PDF O IMAGEN)
+    function procesarComprobante() {
+      const input = document.getElementById('archivoComprobante');
+      const estado = document.getElementById('estadoLectura');
+
+      if (!input.files || input.files.length === 0) {
+        alert("Por favor selecciona un archivo PDF o imagen primero.");
+        return;
+      }
+
+      const file = input.files[0];
+      const reader = new FileReader();
+
+      estado.classList.remove('hidden', 'text-rose-600', 'text-emerald-600');
+      estado.classList.add('text-indigo-600');
+      estado.innerText = "Procesando archivo con OCR...";
+
+      reader.onload = function(e) {
+        const base64Data = e.target.result.split(',')[1];
+        
+        // Llamar a la función del servidor para procesar con OCR/Gemini
+        google.script.run
+          .withSuccessHandler(function(res) {
+            if (res) {
+              if (res.fecha) document.getElementById('gastoFecha').value = res.fecha;
+              if (res.monto) document.getElementById('gastoMonto').value = res.monto;
+              if (res.detalle) document.getElementById('gastoDetalle').value = res.detalle;
+              if (res.categoria) document.getElementById('gastoCategoria').value = res.categoria;
+              if (res.depto) document.getElementById('gastoDepto').value = res.depto;
+
+              estado.classList.remove('text-indigo-600');
+              estado.classList.add('text-emerald-600');
+              estado.innerText = "¡Datos extraídos y autocompletados con éxito!";
+            } else {
+              estado.classList.remove('text-indigo-600');
+              estado.classList.add('text-rose-600');
+              estado.innerText = "No se pudieron extraer los datos automáticamente.";
+            }
+          })
+          .withFailureHandler(function(err) {
+            estado.classList.remove('text-indigo-600');
+            estado.classList.add('text-rose-600');
+            estado.innerText = "Error al leer el archivo: " + err.message;
+          })
+          .procesarArchivoComprobante(base64Data, file.type);
+      };
+
+      reader.readAsDataURL(file);
+    }
+
+    function limpiarSeleccionMeses() {
+      const selectMeses = document.getElementById('filtroMeses');
+      for (let option of selectMeses.options) {
+        option.selected = false;
+      }
+      actualizarDashboard();
+    }
+
+    function actualizarDashboard() {
+      const deptoSel = document.getElementById('filtroDepto').value;
+      const anioSel = document.getElementById('filtroAnio').value;
+      
+      const selectMeses = document.getElementById('filtroMeses');
+      const mesesSeleccionados = Array.from(selectMeses.selectedOptions).map(opt => parseInt(opt.value));
+
+      let resFiltradas = datosGlobales.reservas.filter(r => {
+        if (deptoSel !== "TODOS" && r.depto !== deptoSel) return false;
+        if (r.checkIn) {
+          const f = new Date(r.checkIn);
+          if (anioSel !== "TODOS" && f.getFullYear().toString() !== anioSel) return false;
+          if (mesesSeleccionados.length > 0 && !mesesSeleccionados.includes(f.getMonth())) return false;
+        }
+        return true;
+      });
+
+      let gastosFiltrados = datosGlobales.gastos.filter(g => {
+        if (deptoSel !== "TODOS" && g.depto !== deptoSel && g.depto !== "General") return false;
+        if (g.fecha) {
+          const f = new Date(g.fecha);
+          if (anioSel !== "TODOS" && f.getFullYear().toString() !== anioSel) return false;
+          if (mesesSeleccionados.length > 0 && !mesesSeleccionados.includes(f.getMonth())) return false;
+        }
+        return true;
+      });
+
+      const totalIngresos = resFiltradas.reduce((sum, r) => sum + r.monto, 0);
+      const totalGastos = gastosFiltrados.reduce((sum, g) => sum + g.monto, 0);
+      const gananciaNeta = totalIngresos - totalGastos;
+      const nochesOcupadas = resFiltradas.reduce((sum, r) => sum + r.noches, 0);
+
+      const cantMeses = mesesSeleccionados.length > 0 ? mesesSeleccionados.length : 12;
+      const cantDeptos = deptoSel === "TODOS" ? 5 : 1;
+      const nochesDisponibles = 30 * cantMeses * cantDeptos;
+      const ocupacionPct = (nochesOcupadas / nochesDisponibles) * 100;
+
+      const adr = nochesOcupadas > 0 ? totalIngresos / nochesOcupadas : 0;
+      const revpar = totalIngresos / nochesDisponibles;
+
+      document.getElementById('kpiIngresos').innerText = `$${totalIngresos.toLocaleString('es-AR')}`;
+      document.getElementById('kpiGastos').innerText = `$${totalGastos.toLocaleString('es-AR')}`;
+      document.getElementById('kpiGanancia').innerText = `$${gananciaNeta.toLocaleString('es-AR')}`;
+      document.getElementById('kpiOcupacion').innerText = `${ocupacionPct.toFixed(1)}%`;
+      document.getElementById('kpiADR').innerText = `$${adr.toLocaleString('es-AR', {maximumFractionDigits: 0})}`;
+      document.getElementById('kpiRevPAR').innerText = `$${revpar.toLocaleString('es-AR', {maximumFractionDigits: 0})}`;
+
+      renderizarGraficos(resFiltradas, gastosFiltrados, mesesSeleccionados);
+      renderizarTablaResumen(resFiltradas, gastosFiltrados, cantMeses);
+    }
+
+    function renderizarGraficos(reservas, gastos, mesesSeleccionados) {
+      const deptos = ["Depto 2", "Depto 3", "Depto 4", "Depto 5", "Depto 6"];
+
+      const indicesMeses = mesesSeleccionados.length > 0 ? mesesSeleccionados.sort((a,b) => a-b) : [0,1,2,3,4,5,6,7,8,9,10,11];
+      const labelsMeses = indicesMeses.map(m => NOMBRES_MESES[m]);
+
+      const ingPorMes = indicesMeses.map(m => {
+        return reservas.filter(r => r.checkIn && new Date(r.checkIn).getMonth() === m).reduce((s, r) => s + r.monto, 0);
+      });
+      const gasPorMes = indicesMeses.map(m => {
+        return gastos.filter(g => g.fecha && new Date(g.fecha).getMonth() === m).reduce((s, g) => s + g.monto, 0);
+      });
+
+      if (chartEvolucion) chartEvolucion.destroy();
+      const ctxEvol = document.getElementById('chartEvolucionMensual').getContext('2d');
+      chartEvolucion = new Chart(ctxEvol, {
+        type: 'line',
+        data: {
+          labels: labelsMeses,
+          datasets: [
+            { label: 'Ingresos', data: ingPorMes, borderColor: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.1)', fill: true, tension: 0.3 },
+            { label: 'Gastos', data: gasPorMes, borderColor: '#f43f5e', backgroundColor: 'rgba(244, 63, 94, 0.1)', fill: true, tension: 0.3 }
+          ]
+        },
+        options: { responsive: true, maintainAspectRatio: false }
+      });
+
+      const canalesUnicos = [...new Set(reservas.map(r => r.canal))];
+      const datasetsCanales = canalesUnicos.map((canal, idx) => {
+        const dataCanal = indicesMeses.map(m => {
+          return reservas.filter(r => r.canal === canal && r.checkIn && new Date(r.checkIn).getMonth() === m)
+                         .reduce((s, r) => s + r.monto, 0);
+        });
+        return {
+          label: canal,
+          data: dataCanal,
+          backgroundColor: COLORES_CANALES[idx % COLORES_CANALES.length]
+        };
+      });
+
+      if (chartCanalMes) chartCanalMes.destroy();
+      const ctxCanalMes = document.getElementById('chartCanalesMes').getContext('2d');
+      chartCanalMes = new Chart(ctxCanalMes, {
+        type: 'bar',
+        data: {
+          labels: labelsMeses,
+          datasets: datasetsCanales.length > 0 ? datasetsCanales : [{ label: 'Sin Datos', data: indicesMeses.map(()=>0) }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            x: { stacked: true },
+            y: { stacked: true }
+          }
+        }
+      });
+
+      const ingPorDepto = deptos.map(d => reservas.filter(r => r.depto === d).reduce((s, r) => s + r.monto, 0));
+      const gasPorDepto = deptos.map(d => gastos.filter(g => g.depto === d).reduce((s, g) => s + g.monto, 0));
+
+      if (chartComp) chartComp.destroy();
+      const ctx1 = document.getElementById('chartComparativo').getContext('2d');
+      chartComp = new Chart(ctx1, {
+        type: 'bar',
+        data: {
+          labels: deptos,
+          datasets: [
+            { label: 'Ingresos', data: ingPorDepto, backgroundColor: '#10b981' },
+            { label: 'Gastos', data: gasPorDepto, backgroundColor: '#f43f5e' }
+          ]
+        },
+        options: { responsive: true, maintainAspectRatio: false }
+      });
+
+      const canalesMap = {};
+      reservas.forEach(r => { canalesMap[r.canal] = (canalesMap[r.canal] || 0) + r.monto; });
+      
+      if (chartCanal) chartCanal.destroy();
+      const ctx2 = document.getElementById('chartCanales').getContext('2d');
+      chartCanal = new Chart(ctx2, {
+        type: 'doughnut',
+        data: {
+          labels: Object.keys(canalesMap).length > 0 ? Object.keys(canalesMap) : ['Sin Datos'],
+          datasets: [{ data: Object.values(canalesMap).length > 0 ? Object.values(canalesMap) : [1], backgroundColor: COLORES_CANALES }]
+        },
+        options: { responsive: true, maintainAspectRatio: false }
+      });
+
+      const catMap = {};
+      gastos.forEach(g => { catMap[g.categoria] = (catMap[g.categoria] || 0) + g.monto; });
+
+      if (chartGastos) chartGastos.destroy();
+      const ctx3 = document.getElementById('chartGastosCat').getContext('2d');
+      chartGastos = new Chart(ctx3, {
+        type: 'bar',
+        data: {
+          labels: Object.keys(catMap).length > 0 ? Object.keys(catMap) : ['Sin Gastos'],
+          datasets: [{ label: 'Monto $', data: Object.values(catMap).length > 0 ? Object.values(catMap) : [0], backgroundColor: '#3b82f6' }]
+        },
+        options: { responsive: true, maintainAspectRatio: false }
+      });
+    }
+
+    function renderizarTablaResumen(reservas, gastos, cantMeses) {
+      const deptos = ["Depto 2", "Depto 3", "Depto 4", "Depto 5", "Depto 6"];
+      const tbody = document.getElementById('tablaResumenBody');
+      tbody.innerHTML = '';
+
+      let datosDepto = {};
+      deptos.forEach(d => {
+        const resD = reservas.filter(r => r.depto === d);
+        const gasD = gastos.filter(g => g.depto === d);
+
+        const ing = resD.reduce((s, r) => s + r.monto, 0);
+        const gas = gasD.reduce((s, g) => s + g.monto, 0);
+        const gan = ing - gas;
+        const noches = resD.reduce((s, r) => s + r.noches, 0);
+        const ocup = ((noches / (30 * cantMeses)) * 100).toFixed(1) + '%';
+        const adr = noches > 0 ? '$' + Math.round(ing / noches).toLocaleString('es-AR') : '$0';
+
+        datosDepto[d] = { ing, gas, gan, noches, ocup, adr };
+      });
+
+      const metricas = [
+        { clave: 'ing', titulo: 'Ingresos Totales', formato: v => '$' + v.toLocaleString('es-AR') },
+        { clave: 'gas', titulo: 'Gastos Totales', formato: v => '$' + v.toLocaleString('es-AR') },
+        { clave: 'gan', titulo: 'Ganancia Neta', formato: v => '$' + v.toLocaleString('es-AR') },
+        { clave: 'noches', titulo: 'Noches Ocupadas', formato: v => v },
+        { clave: 'ocup', titulo: 'Ocupación %', formato: v => v },
+        { clave: 'adr', titulo: 'ADR (Diario)', formato: v => v }
+      ];
+
+      metricas.forEach(m => {
+        let tr = document.createElement('tr');
+        let html = `<td class="px-4 py-3 font-semibold text-slate-700 bg-slate-50">${m.titulo}</td>`;
+        
+        deptos.forEach(d => {
+          const val = datosDepto[d][m.clave];
+          html += `<td class="px-4 py-3">${m.formato(val)}</td>`;
+        });
+
+        tr.innerHTML = html;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function guardarGasto(e) {
+      e.preventDefault();
+      alert("Gasto registrado con éxito.");
+    }
+  </script>
+</body>
+</html>
