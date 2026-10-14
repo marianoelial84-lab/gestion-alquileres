@@ -63,8 +63,8 @@ Accesible desde navegadores móviles o escritorio, incluye:
 ## 📂 Estructura del Repositorio
 
 ```text
-├── Code.gs                   # Backend: Lógica principal, doGet() y procesadores
-├── CodigoReservas.gs         # Lógica de extracción de correo para Booking y Airbnb
+├── CodigoAirBnB.gs         # Lógica de extracción de correo para Airbnb
+├── CodigoAirBooking.gs         # Lógica de extracción de correo para Booking
 ├── CodigoGastos.gs           # Lógica para procesar servicios (EDEN, Camuzzi, ABSA, Personal)
 ├── CodigoCalendar.gs         # Sincronización de eventos y recordatorios
 ├── CodigoContratos.gs        # Generación y envío automatizado de contratos PDF
